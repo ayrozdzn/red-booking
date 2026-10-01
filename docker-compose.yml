@@ -8,6 +8,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      FRONTEND_URL: http://localhost:3000
       DATABASE_URL: postgresql://booking:booking@postgres:5432/booking
       REDIS_URL: redis://redis:6379
     depends_on:
