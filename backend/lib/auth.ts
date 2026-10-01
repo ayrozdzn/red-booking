@@ -2,16 +2,21 @@ import { compare, hash } from "bcryptjs";
 import { cookies } from "next/headers";
 
 import { prisma } from "./prisma";
-import { createSession, deleteSession, getSession } from "./session";
+import {
+  createSession,
+  deleteSession,
+  getSession,
+  REMEMBERED_SESSION_TTL_SECONDS,
+  SESSION_TTL_SECONDS,
+} from "./session";
 
 export const SESSION_COOKIE = "red_booking_session";
 
-const cookieOptions = {
+const baseCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
   secure: process.env.NODE_ENV === "production",
   path: "/",
-  maxAge: 60 * 60 * 24 * 7,
 };
 
 export async function registerUser(email: string, password: string) {
@@ -44,11 +49,14 @@ export async function authenticateUser(email: string, password: string) {
   };
 }
 
-export async function setSession(userId: string) {
-  const token = await createSession(userId);
+export async function setSession(userId: string, rememberMe = false) {
+  const token = await createSession(userId, rememberMe);
   const cookieStore = await cookies();
+  const maxAge = rememberMe
+    ? REMEMBERED_SESSION_TTL_SECONDS
+    : SESSION_TTL_SECONDS;
 
-  cookieStore.set(SESSION_COOKIE, token, cookieOptions);
+  cookieStore.set(SESSION_COOKIE, token, { ...baseCookieOptions, maxAge });
 }
 
 export async function getCurrentUser() {
@@ -75,5 +83,5 @@ export async function clearSession() {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
 
   await deleteSession(token);
-  cookieStore.set(SESSION_COOKIE, "", { ...cookieOptions, maxAge: 0 });
+  cookieStore.set(SESSION_COOKIE, "", { ...baseCookieOptions, maxAge: 0 });
 }

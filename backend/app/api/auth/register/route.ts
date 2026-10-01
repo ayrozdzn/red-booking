@@ -7,6 +7,7 @@ import { registerUser, setSession } from "../../../../lib/auth";
 const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 export async function POST(request: Request) {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
 
   try {
     const user = await registerUser(result.data.email, result.data.password);
-    await setSession(user.id);
+    await setSession(user.id, result.data.rememberMe);
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {

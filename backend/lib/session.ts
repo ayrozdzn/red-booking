@@ -2,19 +2,23 @@ import { randomBytes } from "node:crypto";
 
 import { getRedis } from "./redis";
 
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+export const REMEMBERED_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const SESSION_PREFIX = "session:";
 
 type Session = {
   userId: string;
 };
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, rememberMe = false) {
   const token = randomBytes(32).toString("hex");
   const client = await getRedis();
+  const ttl = rememberMe
+    ? REMEMBERED_SESSION_TTL_SECONDS
+    : SESSION_TTL_SECONDS;
 
   await client.set(`${SESSION_PREFIX}${token}`, JSON.stringify({ userId }), {
-    EX: SESSION_TTL_SECONDS,
+    EX: ttl,
   });
 
   return token;
